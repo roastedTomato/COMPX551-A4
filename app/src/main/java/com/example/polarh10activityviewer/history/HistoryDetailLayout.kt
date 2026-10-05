@@ -21,6 +21,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.polarh10activityviewer.heartrate.HeartRateZoneRows
+import com.example.polarh10activityviewer.session.SessionRecord
+import com.example.polarh10activityviewer.session.SummaryCard
 import com.example.polarh10activityviewer.session.SessionSnapshot
 import com.example.polarh10activityviewer.session.SessionSummaryPanel
 import com.example.polarh10activityviewer.session.sessionBackground
@@ -107,5 +110,14 @@ internal fun HistoryDetailLayout(snapshot: SessionSnapshot?, loading: Boolean, e
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun HistoryZones(record: SessionRecord, modifier: Modifier = Modifier) {
+    val summary = record.summary
+    SummaryCard(modifier, title = "HR Zones") {
+        if (!summary.receivedValidHr) Text("No valid heart rate data", style = MaterialTheme.typography.bodySmall)
+        HeartRateZoneRows(summary.zoneDurationsMs, record.durationMs, summary.receivedValidHr)
     }
 }

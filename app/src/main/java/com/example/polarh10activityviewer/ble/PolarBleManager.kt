@@ -6,7 +6,7 @@ import com.example.polarh10activityviewer.heartrate.HeartRateZones
 import com.example.polarh10activityviewer.history.HrHistory
 import com.example.polarh10activityviewer.history.MotionHistory
 import com.example.polarh10activityviewer.motion.StepDetector
-import com.example.polarh10activityviewer.sensor.AccBuffer
+import com.example.polarh10activityviewer.sensor.AccSampleProcessor
 import com.example.polarh10activityviewer.sensor.EcgBuffer
 import com.example.polarh10activityviewer.storage.SignalBuffer
 import com.example.polarh10activityviewer.storage.RawEcg
@@ -129,7 +129,7 @@ class PolarBleManager(context: Context) {
     internal val heartRateZoneState = heartRateZones.state
     private val stepDetector = StepDetector(SystemClock::elapsedRealtime)
     internal val stepState = stepDetector.state
-    private val accBuffer = AccBuffer { stepDetector.receive(it) }
+    private val accProcessor = AccSampleProcessor { stepDetector.receive(it) }
     private var signals = SignalBuffer()
     private var checkpointBucket = 0L
     private var checkpointAt = -1000L
@@ -150,7 +150,7 @@ class PolarBleManager(context: Context) {
             heartRateZones.clearCurrent(session.state.value.elapsedMs)
         }
         latestHeartRate.onSubscriptionState(type, status)
-        accBuffer.onSubscriptionState(type, status)
+        accProcessor.onSubscriptionState(type, status)
         if (type == PolarDeviceDataType.ACC && session.state.value.ongoing) {
             stepDetector.onSubscriptionState(status)
         }
@@ -163,56 +163,17 @@ class PolarBleManager(context: Context) {
         session.onSubscriptionState(type, status, eventTime)
     }
     internal val subscriptionStates = dataSubscriptions.states
-    private val session: SessionController = SessionController(dataSubscriptions, SystemClock::elapsedRealtime,
-        clearAllReadings = {
-            pauseContinuations = emptySet()
-            signals = SignalBuffer()
-            checkpointBucket = 0L; checkpointAt = -1000L
-            hrHistory.reset(session.state.value.record?.id)
-            motionHistory.reset(session.state.value.record?.id)
-            liveCharts.reset()
-            if (session.state.value.status == SessionStatus.IDLE) liveCharts.select(ChartKind.HEART_RATE)
-            heartRateZones.reset()
-            latestHeartRate.reset()
-            previousHrArrival = null
-            accBuffer.clear()
-            stepDetector.reset()
-            ecgBuffer.clear()
-        },
-        clearHr = {
-            pauseContinuations = if (session.state.value.status == SessionStatus.PAUSING &&
-                !storage.recording.state.value.blocked) {
-                setOf(PolarDeviceDataType.HR, PolarDeviceDataType.ACC).filter {
-                    dataSubscriptions.states.value.getValue(it).status == SubscriptionStatus.RECEIVING
-                }.toSet()
-            } else emptySet()
-            hrHistory.stop()
-            motionHistory.stop()
-            liveCharts.stop(session.state.value.elapsedMs)
-            heartRateZones.clearCurrent(session.state.value.elapsedMs)
-            latestHeartRate.clear()
-            stepDetector.updateSessionTime(session.state.value.elapsedMs)
-            stepDetector.stop()
-        },
-        readSummary = { elapsed ->
-            heartRateZones.refresh(elapsed)
-            stepDetector.updateSessionTime(elapsed)
-            SessionSummary.from(latestHeartRate.statistics.value, heartRateZones.state.value, stepState.value)
-        },
-        onSummaryFrozen = { record ->
-            if (!discardingRecording) checkpointSignals(record, true)
-            val snapshot = SessionSnapshot(record, hrHistory.snapshot(), motionHistory.snapshot())
-            mutableLastSnapshot.value = snapshot
-            if (!discardingRecording) storage.saves.submit(snapshot)
-        },
+    private val session: SessionController = SessionController(
+        dataSubscriptions,
+        SystemClock::elapsedRealtime,
+        clearAllReadings = ::resetSessionReadings,
+        stopSessionReadings = ::stopSessionReadings,
+        readSummary = ::readSessionSummary,
+        onSummaryFrozen = ::saveSessionSnapshot,
         canStart = { !storage.saves.state.value.blocksStart && !storage.recording.state.value.blocked },
-        onResume = {
-            val hr = PolarDeviceDataType.HR in pauseContinuations
-            val motion = PolarDeviceDataType.ACC in pauseContinuations
-            hrHistory.resume(hr); motionHistory.resume(motion); liveCharts.resume(hr, motion)
-            pauseContinuations = emptySet()
-        },
-        onPaused = { record -> checkpointSignals(record, true) })
+        onResume = ::resumeSessionHistory,
+        onPaused = { record -> checkpointSignals(record, true) }
+    )
     init { storage.recording.onFailure = { session.pause() } }
     internal val sessionState = session.state
 
@@ -264,6 +225,61 @@ class PolarBleManager(context: Context) {
                 checkpointSignals(session.state.value.record!!)
             }
         }
+    }
+
+    private fun resetSessionReadings() {
+        pauseContinuations = emptySet()
+        signals = SignalBuffer()
+        checkpointBucket = 0L
+        checkpointAt = -1000L
+        hrHistory.reset(session.state.value.record?.id)
+        motionHistory.reset(session.state.value.record?.id)
+        liveCharts.reset()
+        if (session.state.value.status == SessionStatus.IDLE) liveCharts.select(ChartKind.HEART_RATE)
+        heartRateZones.reset()
+        latestHeartRate.reset()
+        previousHrArrival = null
+        accProcessor.clear()
+        stepDetector.reset()
+        ecgBuffer.clear()
+    }
+
+    private fun stopSessionReadings() {
+        pauseContinuations = if (session.state.value.status == SessionStatus.PAUSING &&
+            !storage.recording.state.value.blocked) {
+            setOf(PolarDeviceDataType.HR, PolarDeviceDataType.ACC).filter {
+                dataSubscriptions.states.value.getValue(it).status == SubscriptionStatus.RECEIVING
+            }.toSet()
+        } else emptySet()
+        hrHistory.stop()
+        motionHistory.stop()
+        liveCharts.stop(session.state.value.elapsedMs)
+        heartRateZones.clearCurrent(session.state.value.elapsedMs)
+        latestHeartRate.clear()
+        stepDetector.updateSessionTime(session.state.value.elapsedMs)
+        stepDetector.stop()
+    }
+
+    private fun readSessionSummary(elapsed: Long): SessionSummary {
+        heartRateZones.refresh(elapsed)
+        stepDetector.updateSessionTime(elapsed)
+        return SessionSummary.from(latestHeartRate.statistics.value, heartRateZones.state.value, stepState.value)
+    }
+
+    private fun saveSessionSnapshot(record: SessionRecord) {
+        if (!discardingRecording) checkpointSignals(record, true)
+        val snapshot = SessionSnapshot(record, hrHistory.snapshot(), motionHistory.snapshot())
+        mutableLastSnapshot.value = snapshot
+        if (!discardingRecording) storage.saves.submit(snapshot)
+    }
+
+    private fun resumeSessionHistory() {
+        val hr = PolarDeviceDataType.HR in pauseContinuations
+        val motion = PolarDeviceDataType.ACC in pauseContinuations
+        hrHistory.resume(hr)
+        motionHistory.resume(motion)
+        liveCharts.resume(hr, motion)
+        pauseContinuations = emptySet()
     }
 
     private fun acceptSignalInput(bytes: Int): Boolean {
@@ -356,7 +372,7 @@ class PolarBleManager(context: Context) {
                     .filter { it.samples.isNotEmpty() }
             },
             onData = { data, receivedAt, receivedDate ->
-                accBuffer.receive(data)
+                accProcessor.receive(data)
                 stepDetector.receivedBatch(data.samples.last().timeStamp, receivedAt)
                 if (stepState.value.incompleteAcc) session.markMissing(PolarDeviceDataType.ACC)
                 session.onValidData(receivedAt, receivedDate)

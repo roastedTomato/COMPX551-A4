@@ -2,7 +2,7 @@ package com.example.polarh10activityviewer.motion
 
 import com.example.polarh10activityviewer.ble.DataSubscriptions
 import com.example.polarh10activityviewer.ble.SubscriptionStatus
-import com.example.polarh10activityviewer.sensor.AccBuffer
+import com.example.polarh10activityviewer.sensor.AccSampleProcessor
 import com.example.polarh10activityviewer.sensor.AccSample
 
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType.ACC
@@ -71,7 +71,7 @@ class AccPreprocessorTest {
     @Test fun newBatchesProcessEachArrivalExactlyOnce() {
         val processor = AccPreprocessor()
         val results = mutableListOf<PreparedAcc>()
-        val buffer = AccBuffer { results += processor.receive(it) }
+        val buffer = AccSampleProcessor { results += processor.receive(it) }
         buffer.receive(batch(0, 52))
         buffer.receive(batch(53, 104))
         buffer.receive(PolarAccelerometerData(emptyList()))
@@ -83,7 +83,7 @@ class AccPreprocessorTest {
 
     @Test fun thirtyMillisecondBoundaryAndCrossBatchGapResetWarmup() {
         val processor = AccPreprocessor()
-        val buffer = AccBuffer { processor.receive(it) }
+        val buffer = AccSampleProcessor { processor.receive(it) }
         buffer.receive(batch(0, 104))
         fun at(time: Long) = PolarAccelerometerData(listOf(
             PolarAccelerometerData.PolarAccelerometerDataSample(time, 1000, 0, 0)))
@@ -97,7 +97,7 @@ class AccPreprocessorTest {
 
     @Test fun stoppingClearsPreparationAndRestartCannotReceiveOldSourceEvents() = runTest {
         val processor = AccPreprocessor()
-        val buffer = AccBuffer { processor.receive(it) }
+        val buffer = AccSampleProcessor { processor.receive(it) }
         val subscriptions = DataSubscriptions(this) { type, status ->
             buffer.onSubscriptionState(type, status)
             if (type == ACC && status != SubscriptionStatus.RECEIVING) processor.clear()

@@ -10,7 +10,7 @@ import com.example.polarh10activityviewer.heartrate.HeartRateZoneState
 import com.example.polarh10activityviewer.heartrate.HeartRateZones
 import com.example.polarh10activityviewer.motion.StepDetector
 import com.example.polarh10activityviewer.motion.StepState
-import com.example.polarh10activityviewer.sensor.AccBuffer
+import com.example.polarh10activityviewer.sensor.AccSampleProcessor
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType.*
 import com.polar.sdk.api.model.PolarAccelerometerData
@@ -43,7 +43,7 @@ class SessionRecordTest {
         val hr = LatestHeartRate()
         val zones = HeartRateZones()
         val motion = StepDetector { now }
-        val acc = AccBuffer { motion.receive(it) }
+        val acc = AccSampleProcessor { motion.receive(it) }
         lateinit var session: SessionController
         val subscriptions = DataSubscriptions(scope) { type, status ->
             if (type == HR && status != SubscriptionStatus.RECEIVING && session.state.value.ongoing) {

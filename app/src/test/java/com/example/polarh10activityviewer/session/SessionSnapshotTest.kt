@@ -10,7 +10,7 @@ import com.example.polarh10activityviewer.heartrate.HeartRateZones
 import com.example.polarh10activityviewer.history.HrHistory
 import com.example.polarh10activityviewer.history.MotionHistory
 import com.example.polarh10activityviewer.motion.StepDetector
-import com.example.polarh10activityviewer.sensor.AccBuffer
+import com.example.polarh10activityviewer.sensor.AccSampleProcessor
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType.ACC
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType.HR
 import com.polar.sdk.api.model.PolarAccelerometerData
@@ -49,7 +49,7 @@ class SessionSnapshotTest {
         val hr = LatestHeartRate()
         val zones = HeartRateZones()
         val detector = StepDetector { now }
-        val acc = AccBuffer { detector.receive(it) }
+        val acc = AccSampleProcessor { detector.receive(it) }
         val hrHistory = HrHistory()
         val motionHistory = MotionHistory()
         val charts = LiveCharts { emptyList() }

@@ -7,7 +7,7 @@ import com.example.polarh10activityviewer.ble.ConnectionDevice
 import com.example.polarh10activityviewer.ble.HeartRateStatistics
 import com.example.polarh10activityviewer.ble.LatestHeartRate
 import com.example.polarh10activityviewer.ble.SubscriptionStatus
-import com.example.polarh10activityviewer.sensor.AccBuffer
+import com.example.polarh10activityviewer.sensor.AccSampleProcessor
 import com.example.polarh10activityviewer.sensor.EcgBuffer
 
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType
@@ -40,7 +40,7 @@ class SessionStateTest {
         var connected = true
         val hr = LatestHeartRate()
         val accSamples = mutableListOf<AccSample>()
-        val acc = AccBuffer { accSamples.add(it) }
+        val acc = AccSampleProcessor { accSamples.add(it) }
         val ecg = EcgBuffer()
         val saved = mutableListOf<SessionRecord>()
         lateinit var session: SessionController

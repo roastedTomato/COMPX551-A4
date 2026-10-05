@@ -22,17 +22,17 @@ import org.junit.Assert.*
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class AccBufferTest {
+class AccSampleProcessorTest {
     private fun batch(vararg times: Long) = PolarAccelerometerData(times.map {
         PolarAccelerometerData.PolarAccelerometerDataSample(it, -123, 456, 1000)
     })
-    private fun DataSubscriptions.startAcc(buffer: AccBuffer, source: Flow<PolarAccelerometerData>,
+    private fun DataSubscriptions.startAcc(buffer: AccSampleProcessor, source: Flow<PolarAccelerometerData>,
         current: () -> Boolean = { true }) = start(ACC, { true }, current,
         { source.filter { it.samples.isNotEmpty() } }, buffer::receive)
 
     @Test fun forwardsEveryRawSampleAndMarksOnlyGapsStrictlyAbove30msAcrossBatches() {
         val samples = mutableListOf<AccSample>()
-        val buffer = AccBuffer { samples.add(it) }
+        val buffer = AccSampleProcessor { samples.add(it) }
         buffer.receive(batch(0, 10_000_000, 40_000_000))
         buffer.receive(batch(70_000_001, 80_000_001))
         assertEquals(listOf(0L, 10_000_000L, 40_000_000L, 70_000_001L, 80_000_001L), samples.map { it.timeStamp })
@@ -42,7 +42,7 @@ class AccBufferTest {
 
     @Test fun emptyBatchDoesNotMarkReceiving() = runTest {
         val samples = mutableListOf<AccSample>()
-        val buffer = AccBuffer { samples.add(it) }
+        val buffer = AccSampleProcessor { samples.add(it) }
         val subscriptions = DataSubscriptions(this, buffer::onSubscriptionState)
         val source = MutableSharedFlow<PolarAccelerometerData>()
         subscriptions.startAcc(buffer, source)
@@ -59,7 +59,7 @@ class AccBufferTest {
 
     @Test fun duplicateAndStoppingDoNotForwardExtraSamplesAndRestartResetsGapTracking() = runTest {
         val samples = mutableListOf<AccSample>()
-        val buffer = AccBuffer { samples.add(it) }
+        val buffer = AccSampleProcessor { samples.add(it) }
         val subscriptions = DataSubscriptions(this, buffer::onSubscriptionState)
         val cleanup = CompletableDeferred<Unit>()
         val source = flow {
@@ -92,7 +92,7 @@ class AccBufferTest {
 
     @Test fun completionFailureAndConnectionCleanupLeaveHrIndependent() = runTest {
         val samples = mutableListOf<AccSample>()
-        val buffer = AccBuffer { samples.add(it) }
+        val buffer = AccSampleProcessor { samples.add(it) }
         val subscriptions = DataSubscriptions(this, buffer::onSubscriptionState)
         subscriptions.start(HR, { true }, { true }, { flow { emit(80); awaitCancellation() } }, {})
         for (fails in listOf(false, true)) {
@@ -123,7 +123,7 @@ class AccBufferTest {
 
     @Test fun settingsTaskPreventsDuplicatesAndIsCancelledBeforeRetry() = runTest {
         val samples = mutableListOf<AccSample>()
-        val buffer = AccBuffer { samples.add(it) }
+        val buffer = AccSampleProcessor { samples.add(it) }
         val subscriptions = DataSubscriptions(this, buffer::onSubscriptionState)
         val query = CompletableDeferred<Unit>()
         var queries = 0
@@ -154,7 +154,7 @@ class AccBufferTest {
 
     @Test fun oldConnectionAndOldTaskCannotForwardSamples() = runTest {
         val samples = mutableListOf<AccSample>()
-        val buffer = AccBuffer { samples.add(it) }
+        val buffer = AccSampleProcessor { samples.add(it) }
         val subscriptions = DataSubscriptions(this, buffer::onSubscriptionState)
         lateinit var oldCollector: FlowCollector<PolarAccelerometerData>
         val oldSource = object : Flow<PolarAccelerometerData> {

@@ -36,7 +36,7 @@ internal class SessionController(
     private val subscriptions: DataSubscriptions,
     private val now: () -> Long,
     private val clearAllReadings: () -> Unit,
-    private val clearHr: () -> Unit,
+    private val stopSessionReadings: () -> Unit,
     private val readSummary: (Long) -> SessionSummary,
     private val wallNow: () -> Long = System::currentTimeMillis,
     private val onSummaryFrozen: (SessionRecord) -> Unit = {},
@@ -77,7 +77,7 @@ internal class SessionController(
         accumulatedMs = elapsed()
         startedAt = null
         mutableState.value = state.value.copy(status = SessionStatus.PAUSING, elapsedMs = accumulatedMs)
-        clearHr()
+        stopSessionReadings()
         mutableState.value = state.value.copy(record = state.value.record!!.copy(
             durationMs = accumulatedMs, summary = readSummary(accumulatedMs)))
         onPaused(state.value.record!!)
@@ -170,7 +170,7 @@ internal class SessionController(
             status = SessionStatus.STOPPING, elapsedMs = duration, endReason = reason,
             record = state.value.record!!.copy(endedAt = endedAt, endReason = reason, interrupted = interrupted)
         )
-        clearHr()
+        stopSessionReadings()
         freezeSummary()
         subscriptions.stopAll()
         finishIfIdle()
@@ -193,7 +193,7 @@ internal class SessionController(
                 status = SessionStatus.STOPPED, elapsedMs = elapsed(at), endReason = reason,
                 record = state.value.record!!.copy(endedAt = wallNow(), endReason = reason)
             )
-            clearHr()
+            stopSessionReadings()
             freezeSummary()
         } else if (state.value.status == SessionStatus.STOPPING) {
             if (resetAfterStop) {

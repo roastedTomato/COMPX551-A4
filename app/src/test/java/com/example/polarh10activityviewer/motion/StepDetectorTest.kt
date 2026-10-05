@@ -2,7 +2,7 @@ package com.example.polarh10activityviewer.motion
 
 import com.example.polarh10activityviewer.ble.DataSubscriptions
 import com.example.polarh10activityviewer.ble.SubscriptionStatus
-import com.example.polarh10activityviewer.sensor.AccBuffer
+import com.example.polarh10activityviewer.sensor.AccSampleProcessor
 import com.example.polarh10activityviewer.sensor.AccSample
 import com.example.polarh10activityviewer.session.SessionController
 import com.example.polarh10activityviewer.session.SessionSummary
@@ -215,7 +215,7 @@ class StepDetectorTest {
     @Test fun realProcessingPathCommitsFourOriginalPeakTimesAcrossBatches() {
         val detector = StepDetector()
         val commits = mutableListOf<List<StepCandidate>>()
-        val buffer = AccBuffer { sample ->
+        val buffer = AccSampleProcessor { sample ->
             val result = detector.receive(sample)
             if (result.isNotEmpty()) commits += result
         }
@@ -266,7 +266,7 @@ class StepDetectorTest {
 
     @Test fun subscriptionStopRetryAndStaleSourcePreserveOnlyCommittedTotals() = runTest {
         val detector = StepDetector()
-        val buffer = AccBuffer { detector.receive(it) }
+        val buffer = AccSampleProcessor { detector.receive(it) }
         val subscriptions = DataSubscriptions(this) { type, status ->
             buffer.onSubscriptionState(type, status)
             if (type == ACC && status != SubscriptionStatus.RECEIVING) detector.clearSegment()

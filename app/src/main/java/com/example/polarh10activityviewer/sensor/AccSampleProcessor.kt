@@ -16,7 +16,7 @@ data class AccSample(
 )
 
 @MainThread
-internal class AccBuffer(private val onSample: (AccSample) -> Unit = {}) {
+internal class AccSampleProcessor(private val onSample: (AccSample) -> Unit = {}) {
     private var previousTimeStamp: Long? = null
 
     fun onSubscriptionState(type: PolarDeviceDataType, status: SubscriptionStatus) {

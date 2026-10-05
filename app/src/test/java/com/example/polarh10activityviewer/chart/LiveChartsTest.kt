@@ -8,7 +8,7 @@ import com.example.polarh10activityviewer.ble.SubscriptionStatus
 import com.example.polarh10activityviewer.heartrate.HeartRateZones
 import com.example.polarh10activityviewer.motion.StepDetector
 import com.example.polarh10activityviewer.motion.StepState
-import com.example.polarh10activityviewer.sensor.AccBuffer
+import com.example.polarh10activityviewer.sensor.AccSampleProcessor
 import com.example.polarh10activityviewer.sensor.AccSample
 import com.example.polarh10activityviewer.sensor.EcgBuffer
 
@@ -160,7 +160,7 @@ class LiveChartsTest {
     @Test fun accThirtyMillisecondBoundaryDrivesChartSegmentsWithoutExtraReset() {
         val detector = StepDetector { 0 }
         val charts = running()
-        val buffer = AccBuffer { detector.receive(it) }
+        val buffer = AccSampleProcessor { detector.receive(it) }
         detector.onSubscriptionState(SubscriptionStatus.STARTING)
         fun feed(time: Long) = buffer.receive(com.polar.sdk.api.model.PolarAccelerometerData(listOf(
             com.polar.sdk.api.model.PolarAccelerometerData.PolarAccelerometerDataSample(time, 1000, 0, 0))))
