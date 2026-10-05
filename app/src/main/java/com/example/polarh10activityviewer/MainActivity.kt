@@ -73,13 +73,13 @@ fun WelcomeScreen(onEnterSession: () -> Unit, modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .heightIn(min = viewportHeight)
+                .heightIn(min = viewportHeight) //最小高度=viewportHeight=maxHeight
                 .padding(horizontal = 24.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.SpaceBetween,//分散布局
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Canvas(Modifier.size(56.dp)) {
+                Canvas(Modifier.size(56.dp)) {//画logo，但其实应该是导入logo图片才合适
                     drawCircle(Brush.linearGradient(listOf(Color(0xFF2563EB), Color(0xFF8B5CF6))))
                     val pulse = Path().apply {
                         moveTo(size.width * .20f, size.height * .50f)
@@ -119,7 +119,7 @@ fun WelcomeScreen(onEnterSession: () -> Unit, modifier: Modifier = Modifier) {
                             Offset(size.width * .20f, size.height * y), strokeWidth = 4.dp.toPx())
                     }
                 }
-                Image(painterResource(R.drawable.welcome_runner), contentDescription = null,
+                Image(painterResource(R.drawable.welcome_runner), contentDescription = null,//不重要，屏幕阅读器可以忽略它
                     modifier = Modifier.fillMaxSize())
             }
             Column(

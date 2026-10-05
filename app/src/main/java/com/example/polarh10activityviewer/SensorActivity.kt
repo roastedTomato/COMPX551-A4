@@ -69,19 +69,19 @@ import kotlinx.coroutines.delay
 
 class SensorActivity : ComponentActivity() {
     private val permissions = arrayOf(
-        Manifest.permission.BLUETOOTH_SCAN,
+        Manifest.permission.BLUETOOTH_SCAN,//Nearby devices
         Manifest.permission.BLUETOOTH_CONNECT
     )
-    private val permissionHistory by lazy { getSharedPreferences("bluetooth_permissions", MODE_PRIVATE) }
+    private val permissionHistory by lazy { getSharedPreferences("bluetooth_permissions", MODE_PRIVATE) }//是否曾经请求过权限
     private lateinit var bleManager: PolarBleManager
     private var availability by mutableStateOf(BluetoothAvailability.PERMISSIONS_NEEDED)
-    private var systemRequestPending by mutableStateOf(false)
+    private var systemRequestPending by mutableStateOf(false)//是否正在等待系统弹窗或设置页返回
     private var errorMessage by mutableStateOf<String?>(null)
 
     private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
+        ActivityResultContracts.RequestMultiplePermissions()//一次请求多个权限
     ) { results ->
-        // Record completed requests, not just a click or a cancelled empty result.
+        //map：权限名，是否授予
         permissionHistory.edit().apply {
             results.keys.forEach { putBoolean(it, true) }
         }.apply()
@@ -90,12 +90,13 @@ class SensorActivity : ComponentActivity() {
     }
 
     private val bluetoothLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
+        ActivityResultContracts.StartActivityForResult()//启动一个系统 Activity，并在它结束后回到当前 App。
     ) {
         systemRequestPending = false
         refreshAvailability()
     }
 
+    //当权限已经被拒绝，而且系统不再正常弹权限申请窗口时，App 需要引导用户去系统设置里手动开启权限。
     private val settingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
@@ -105,11 +106,11 @@ class SensorActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        systemRequestPending = savedInstanceState?.getBoolean("systemRequestPending") ?: false
-        bleManager = (application as ActivityViewerApplication).bleManager
+        systemRequestPending = savedInstanceState?.getBoolean("systemRequestPending") ?: false//恢复-当前是否正在等待系统权限页、蓝牙开启页、App 设置页返回。
+        bleManager = (application as ActivityViewerApplication).bleManager //用ActivityViewerApplication申明的bleManager
         enableEdgeToEdge()
         setContent {
-            val scanState by bleManager.scanState.collectAsState()
+            val scanState by bleManager.scanState.collectAsState()//把StateFlow 转成Compose可以观察的State，这样当状态变化时，Compose UI 会自动刷新
             val connectionState by bleManager.connectionState.collectAsState()
             val batteryLevel by bleManager.batteryLevel.collectAsState()
             val savedDevicesState by bleManager.savedDevicesState.collectAsState()
@@ -119,13 +120,13 @@ class SensorActivity : ComponentActivity() {
             val heartRateMessage by bleManager.heartRateMessage.collectAsState()
             val heartRateZones by bleManager.heartRateZoneState.collectAsState()
             val steps by bleManager.stepState.collectAsState()
-            val subscriptionStates by bleManager.subscriptionStates.collectAsState()
+            val subscriptionStates by bleManager.subscriptionStates.collectAsState()//监听 HR / ACC / ECG 三个数据流的订阅状态。
             val session by bleManager.sessionState.collectAsState()
-            val recordingState by bleManager.storage.recording.state.collectAsState()
-            val saveState by bleManager.storage.saves.state.collectAsState()
-            var showHistory by rememberSaveable { mutableStateOf(false) }
-            LaunchedEffect(session.generation, session.status) {
-                val generation = session.generation
+            val recordingState by bleManager.storage.recording.state.collectAsState()//监听原始信号记录器状态。start, resume, recordingpanel是否可用
+            val saveState by bleManager.storage.saves.state.collectAsState()//监听 Session 保存状态。
+            var showHistory by rememberSaveable { mutableStateOf(false) }//rememberSaveable记住选择，控制当前显示 Session 页面还是 History 页面。
+            LaunchedEffect(session.generation, session.status) {//当 session.generation 或 session.status 改变时，重新启动这个 LaunchedEffect。
+                val generation = session.generation//generation相当于版本号，这个刷新事件到底属于旧 Session，还是新 Session？
                 if (session.status == SessionStatus.RUNNING) {
                     while (true) {
                         bleManager.refreshSessionTime(generation)
@@ -137,20 +138,20 @@ class SensorActivity : ComponentActivity() {
                 val disabledReason = startDisabledReason(availability, !systemRequestPending, connectionState,
                     session, saveState.blocksStart || recordingState.blocked, subscriptionStates.values.toList(), dataReadiness.values)
                 SessionScaffold(showHistory, {
-                    if (it) bleManager.pauseForNavigation()
+                    if (it) bleManager.pauseForNavigation()//如果用户正在 Session 中直接进入 History，代码会先暂停当前 Session，避免后台继续采集/刷新，保持状态可控
                     showHistory = it
                 },
                     controls = {
                         SessionControls(disabledReason == null, session.open,
-                            ::handleStartSession, { bleManager.stopSession() },
+                            ::handleStartSession, { bleManager.stopSession() },//点击 Start 按钮后调用 SensorActivity.handleStartSession()，点击 Stop 按钮后，直接调用 PolarBleManager.stopSession()
                             canPause = session.status == SessionStatus.RUNNING,
                             canResume = !recordingState.blocked && session.status == SessionStatus.PAUSED && !systemRequestPending &&
                                 availability == BluetoothAvailability.READY && connectionState.status == ConnectionStatus.CONNECTED &&
                                 session.acceptsDevice(connectionState.device?.deviceId) &&
-                                subscriptionStates.values.none { it.status == SubscriptionStatus.STOPPING } &&
-                                dataReadiness.values.any { it.status == DataReadinessStatus.READY && it.configurationComplete },
-                            paused = session.status in listOf(SessionStatus.PAUSED, SessionStatus.PAUSING),
-                            onPause = { bleManager.pauseSession() }, onResume = { bleManager.resumeSession() })
+                                subscriptionStates.values.none { it.status == SubscriptionStatus.STOPPING } && //没有任何数据流还在停止中。
+                                dataReadiness.values.any { it.status == DataReadinessStatus.READY && it.configurationComplete },//至少有一个数据流已经 ready 且配置完整。
+                            paused = session.status in listOf(SessionStatus.PAUSED, SessionStatus.PAUSING),//决定中间按钮显示 Start 还是 Continue。
+                            onPause = { bleManager.pauseSession() }, onResume = { bleManager.resumeSession() })//函数
                     },
                     historyContent = {
                         HistoryPanel(bleManager.storage.database,
@@ -158,14 +159,14 @@ class SensorActivity : ComponentActivity() {
                             onBack = { showHistory = false }, sessionStatus = {
                                 if (!saveState.blocksStart) RecordingPanel(recordingState,
                                     { bleManager.storage.recording.retry() }, { bleManager.discardRecording() }, session.open)
-                                if (saveState.blocksStart) {
+                                if (saveState.blocksStart) {//blocksStart 通常在这些情况为 true,正在保存
                                     SavePanel(saveState, bleManager.storage.saves, session.record?.id)
                                 }
-                            }, allowCompact = !saveState.blocksStart && !recordingState.blocked)
+                            }, allowCompact = !saveState.blocksStart && !recordingState.blocked)//告诉 HistoryPanel 是否可以使用紧凑布局。
                     },
                     sessionContent = { SessionScreen(
                         availability = availability,
-                        actionEnabled = !systemRequestPending,
+                        actionEnabled = !systemRequestPending,//当前 UI 操作是否可用。
                         errorMessage = errorMessage,
                         onBluetoothAction = ::handleBluetoothAction,
                         scanState = scanState,
@@ -205,7 +206,7 @@ class SensorActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        bleManager.onBluetoothStateChanged = { refreshAvailability() }
+        bleManager.onBluetoothStateChanged = { refreshAvailability() }//告诉 PolarBleManager：如果蓝牙状态发生变化，就通知 SensorActivity 重新检查 availability。
     }
 
     override fun onResume() {
@@ -214,7 +215,7 @@ class SensorActivity : ComponentActivity() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        outState.putBoolean("systemRequestPending", systemRequestPending)
+        outState.putBoolean("systemRequestPending", systemRequestPending)//它保证系统请求等待状态在 Activity 重建后不会丢失。
         super.onSaveInstanceState(outState)
     }
 
@@ -229,16 +230,16 @@ class SensorActivity : ComponentActivity() {
     }
 
     private fun missingPermissions() = permissions.filter {
-        ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED //it指每次的permissions中的一个元素BLUETOOTH_SCAN/BLUETOOTH_CONNECT
     }
 
-    @SuppressLint("MissingPermission")
+    @SuppressLint("MissingPermission")//告诉 Android Lint：这里我知道可能涉及权限检查，不要对这个函数报 MissingPermission 警告。
     private fun refreshAvailability(retryInitialization: Boolean = false) {
-        if (systemRequestPending) return
-        errorMessage = null
-        val adapter = getSystemService(BluetoothManager::class.java)?.adapter
+        if (systemRequestPending) return//如果当前正在等权限弹窗/蓝牙页面/设置页返回，就先不检查。因为系统状态还不稳定。
+        errorMessage = null//每次重新检查前，先清掉旧的页面错误。
+        val adapter = getSystemService(BluetoothManager::class.java)?.adapter//手机蓝牙硬件/蓝牙开关的访问入口。
         if (!packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) || adapter == null) {
-            bleManager.bluetoothUnavailable()
+            bleManager.bluetoothUnavailable() //如果手机不支持 BLE，或者拿不到蓝牙 adapter，就认为蓝牙不可用。
             availability = BluetoothAvailability.UNSUPPORTED
             return
         }
@@ -248,21 +249,21 @@ class SensorActivity : ComponentActivity() {
             bleManager.releaseBluetooth()
             availability = when {
                 missing.any { permissionHistory.getBoolean(it, false) && !shouldShowRequestPermissionRationale(it) } ->
-                    BluetoothAvailability.SETTINGS_REQUIRED
+                    BluetoothAvailability.SETTINGS_REQUIRED//可能需要去系统设置页手动打开
                 missing.any { permissionHistory.getBoolean(it, false) || shouldShowRequestPermissionRationale(it) } ->
-                    BluetoothAvailability.PERMISSION_DENIED
-                else -> BluetoothAvailability.PERMISSIONS_NEEDED
+                    BluetoothAvailability.PERMISSION_DENIED//申请过，但被拒绝，可以再试
+                else -> BluetoothAvailability.PERMISSIONS_NEEDED //第一次还没申请
             }
             return
         }
 
-        // Both runtime permissions have been checked before accessing Bluetooth or the SDK.
+        //判断是否可以初始化 Polar SDK
         if (!bleManager.initialize(retryInitialization)) {
             availability = BluetoothAvailability.SDK_ERROR
             errorMessage = bleManager.initializationError
             return
         }
-        try {
+        try {//判断蓝牙是否开启
             availability = if (adapter.isEnabled) BluetoothAvailability.READY else BluetoothAvailability.BLUETOOTH_OFF
             if (availability != BluetoothAvailability.READY) bleManager.bluetoothUnavailable()
         } catch (_: SecurityException) {
@@ -271,43 +272,25 @@ class SensorActivity : ComponentActivity() {
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private fun handleStartScan() {
+    private fun withBluetoothReady(action: () -> Unit) {
         if (systemRequestPending) return
         refreshAvailability()
-        if (availability == BluetoothAvailability.READY) bleManager.startScan()
+        if (availability == BluetoothAvailability.READY) action()
     }
 
     @SuppressLint("MissingPermission")
-    private fun handleConnect(deviceId: String) {
-        if (systemRequestPending) return
-        refreshAvailability()
-        if (availability == BluetoothAvailability.READY) bleManager.connect(deviceId)
-    }
+    private fun handleStartScan() = withBluetoothReady { bleManager.startScan() }
 
-    private fun handleDisconnect() {
-        if (systemRequestPending) return
-        refreshAvailability()
-        if (availability == BluetoothAvailability.READY) bleManager.disconnect()
-    }
+    @SuppressLint("MissingPermission")
+    private fun handleConnect(deviceId: String) = withBluetoothReady { bleManager.connect(deviceId) }
 
-    private fun handleRetryDisconnect() {
-        if (systemRequestPending) return
-        refreshAvailability()
-        if (availability == BluetoothAvailability.READY) bleManager.retryDisconnect()
-    }
+    private fun handleDisconnect() = withBluetoothReady { bleManager.disconnect() }
 
-    private fun handleRecheckData() {
-        if (systemRequestPending) return
-        refreshAvailability()
-        if (availability == BluetoothAvailability.READY) bleManager.recheckDataReadiness()
-    }
+    private fun handleRetryDisconnect() = withBluetoothReady { bleManager.retryDisconnect() }
 
-    private fun handleStartSession() {
-        if (systemRequestPending) return
-        refreshAvailability()
-        if (availability == BluetoothAvailability.READY) bleManager.startSession()
-    }
+    private fun handleRecheckData() = withBluetoothReady { bleManager.recheckDataReadiness() }
+
+    private fun handleStartSession() = withBluetoothReady { bleManager.startSession() }
 
     @SuppressLint("MissingPermission")
     private fun handleBluetoothAction() {
@@ -315,16 +298,18 @@ class SensorActivity : ComponentActivity() {
         refreshAvailability(retryInitialization = availability == BluetoothAvailability.SDK_ERROR)
         try {
             when (availability) {
+                //如果缺权限，或者权限被拒后仍可再次请求， 就打开系统权限申请弹窗。
                 BluetoothAvailability.PERMISSIONS_NEEDED, BluetoothAvailability.PERMISSION_DENIED -> {
                     systemRequestPending = true
                     permissionLauncher.launch(missingPermissions().toTypedArray())
                 }
+                //如果权限需要去系统设置里手动打开，就打开当前 App 的设置页。
                 BluetoothAvailability.SETTINGS_REQUIRED -> {
                     systemRequestPending = true
                     settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
                 }
+                //如果蓝牙关闭，就请求系统打开蓝牙。
                 BluetoothAvailability.BLUETOOTH_OFF -> {
-                    // refreshAvailability has checked both permissions immediately before this action.
                     systemRequestPending = true
                     bluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
                 }
@@ -383,11 +368,11 @@ internal fun SessionScreen(
     var showDevices by rememberSaveable { mutableStateOf(false) }
     val validBattery = batteryLevel.takeIf {
         availability == BluetoothAvailability.READY && connectionState.status == ConnectionStatus.CONNECTED
-    }
+    }//只有在蓝牙 READY 且设备 CONNECTED 时，才显示电量。
     fun closeDevices() {
         if (scanState.status == ScanStatus.SCANNING) onStopScan()
         showDevices = false
-    }
+    }//关闭设备弹窗，先停止扫描
     val accBusy = accSubscription.status in setOf(SubscriptionStatus.STARTING, SubscriptionStatus.RECEIVING, SubscriptionStatus.STOPPING)
     val ecgBusy = ecgSubscription.status in setOf(SubscriptionStatus.STARTING, SubscriptionStatus.RECEIVING, SubscriptionStatus.STOPPING)
     val notices = buildList {
@@ -395,7 +380,7 @@ internal fun SessionScreen(
         listOf("HR" to hrSubscription, "ACC" to accSubscription, "ECG" to ecgSubscription).forEach { (name, stream) ->
             stream.error?.let { add("$name: $it") }
         }
-    }
+    }//收集页面需要显示的提示/错误信息。
     if (showDevices) {
         DevicesDialog(
             availability = availability, actionEnabled = actionEnabled,

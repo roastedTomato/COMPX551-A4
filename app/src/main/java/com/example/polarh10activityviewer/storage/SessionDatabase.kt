@@ -157,18 +157,11 @@ internal class SessionDatabase(context: Context, name: String = NAME) :
                 db.delete("motion_points", "sessionId = ?", arrayOf(record.id))
                 snapshot.hrPoints.forEach { point ->
                     require(point.sessionId == record.id)
-                    db.insertOrThrow("hr_points", null, ContentValues().apply {
-                        put("sessionId", point.sessionId); put("secondBucket", point.secondBucket)
-                        put("elapsedMs", point.elapsedMs); put("bpm", point.bpm); put("breakBefore", point.breakBefore)
-                    })
+                    db.insertOrThrow("hr_points", null, point.values(record.id))
                 }
                 snapshot.motionPoints.forEach { point ->
                     require(point.sessionId == record.id)
-                    db.insertOrThrow("motion_points", null, ContentValues().apply {
-                        put("sessionId", point.sessionId); put("secondBucket", point.secondBucket)
-                        put("elapsedMs", point.elapsedMs); put("cadence", point.cadence)
-                        put("breakBefore", point.breakBefore)
-                    })
+                    db.insertOrThrow("motion_points", null, point.values(record.id))
                 }
             }
             db.setTransactionSuccessful()
@@ -268,14 +261,12 @@ internal class SessionDatabase(context: Context, name: String = NAME) :
                         put("samples", chunk.bytes)
                     })
                 }
-                batch.hr.forEach { p -> db.replaceOrThrow("hr_points", null, ContentValues().apply {
-                    put("sessionId", record.id); put("secondBucket", p.secondBucket); put("elapsedMs", p.elapsedMs)
-                    put("bpm", p.bpm); put("breakBefore", p.breakBefore)
-                }) }
-                batch.motion.forEach { p -> db.replaceOrThrow("motion_points", null, ContentValues().apply {
-                    put("sessionId", record.id); put("secondBucket", p.secondBucket); put("elapsedMs", p.elapsedMs)
-                    put("cadence", p.cadence); put("breakBefore", p.breakBefore)
-                }) }
+                batch.hr.forEach { point ->
+                    db.replaceOrThrow("hr_points", null, point.values(record.id))
+                }
+                batch.motion.forEach { point ->
+                    db.replaceOrThrow("motion_points", null, point.values(record.id))
+                }
             }
             db.setTransactionSuccessful()
         } finally { db.endTransaction() }
@@ -306,6 +297,22 @@ internal class SessionDatabase(context: Context, name: String = NAME) :
                 (p.elapsedMs < start && result.getOrNull(i+1)?.let { !it.breakBefore && it.elapsedMs >= start } == true) ||
                 (p.elapsedMs > end && !p.breakBefore && result.getOrNull(i-1)?.elapsedMs?.let { it <= end } == true) }
         }
+    }
+
+    private fun HrHistoryPoint.values(recordId: String) = ContentValues().apply {
+        put("sessionId", recordId)
+        put("secondBucket", secondBucket)
+        put("elapsedMs", elapsedMs)
+        put("bpm", bpm)
+        put("breakBefore", breakBefore)
+    }
+
+    private fun MotionHistoryPoint.values(recordId: String) = ContentValues().apply {
+        put("sessionId", recordId)
+        put("secondBucket", secondBucket)
+        put("elapsedMs", elapsedMs)
+        put("cadence", cadence)
+        put("breakBefore", breakBefore)
     }
 
     private fun SessionRecord.values() = ContentValues().apply {

@@ -58,23 +58,22 @@ internal fun SessionScaffold(
             Row(Modifier.fillMaxWidth().background(sessionBackground()).statusBarsPadding().padding(horizontal = 28.dp)) {
                 listOf("Session", "History").forEachIndexed { index, label ->
                     val selected = showHistory == (index == 1)
-                    Tab(selected = showHistory == (index == 1), onClick = { onSelectHistory(index == 1) },
+                    Tab(selected = showHistory == (index == 1), onClick = { onSelectHistory(index == 1) }, //这就是按钮
                         modifier = Modifier.weight(1f),
                         selectedContentColor = sessionBlue(),
                         unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant) {
                         Text(label, Modifier.padding(top = 6.dp, bottom = 6.dp), fontSize = 21.sp, fontWeight = FontWeight.Bold)
                         Box(Modifier.fillMaxWidth().padding(horizontal = 2.dp).height(2.dp)
-                            .background(if (selected) sessionBlue() else sessionBorder()))
+                            .background(if (selected) sessionBlue() else sessionBorder()))//在 tab 下方画一条线。
                     }
                 }
             }
         },
-        bottomBar = { if (!showHistory) controls() }
+        bottomBar = { if (!showHistory) controls() }//如果当前不是 History 页面，就显示底部控制按钮。
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
-            // Keep each page's saveable UI state while cancelling off-screen queries.
-            pages.SaveableStateProvider(if (showHistory) "history" else "session") {
-                if (showHistory) historyContent() else sessionContent()
+        Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {//告诉子组件：这些 padding 已经被父级处理过了，不需要重复处理。
+            pages.SaveableStateProvider(if (showHistory) "history" else "session") {//为不同页面提供独立的可保存状态区域。
+                if (showHistory) historyContent() else sessionContent()//这是核心切换逻辑。
             }
         }
     }
