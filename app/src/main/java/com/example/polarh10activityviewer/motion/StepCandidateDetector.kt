@@ -8,7 +8,6 @@ internal data class StepCandidate(val timeStamp: Long, val peak: Double)
 internal class StepCandidateDetector {
     private data class Cycle(
         val startedAt: Long,
-        val high: Double,
         val low: Double,
         var peak: StepCandidate
     )
@@ -34,7 +33,7 @@ internal class StepCandidateDetector {
         if (active == null) {
             val high = mean + max(deviation, 0.5)
             if (previous != null && previous <= high && current > high) {
-                cycle = Cycle(sample.timeStamp, high, mean, StepCandidate(sample.timeStamp, current))
+                cycle = Cycle(sample.timeStamp, mean, StepCandidate(sample.timeStamp, current))
             }
             return null
         }

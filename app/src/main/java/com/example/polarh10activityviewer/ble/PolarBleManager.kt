@@ -175,6 +175,14 @@ class PolarBleManager(context: Context) {
         onResume = ::resumeSessionHistory,
         onPaused = { record -> checkpointSignals(record, true) }
     )
+    private val dataStreamRunner = DataStreamRunner(
+        subscriptions = dataSubscriptions,
+        nowElapsed = SystemClock::elapsedRealtime,
+        nowWall = System::currentTimeMillis,
+        isCurrent = { source, identifier -> readinessMatches(source, identifier) && bluetoothAvailableForData() },
+        sessionCanReceive = { connectedForData() && session.accepts(sessionState.value.generation) },
+        shouldAcceptAt = { session.checkTimeLimit(it).not() }
+    )
     init { storage.recording.onFailure = { session.pause() } }
     internal val sessionState = session.state
 
@@ -464,19 +472,7 @@ class PolarBleManager(context: Context) {
         val source = api ?: return false
         val identifier = mutableConnectionState.value.device?.deviceId ?: return false
         val generation = sessionState.value.generation
-        return dataSubscriptions.start(
-            type,
-            canStart = { connectedForData() && session.accepts(generation) },
-            isCurrent = { session.accepts(generation) && readinessMatches(source, identifier) && bluetoothAvailableForData() },
-            stream = { stream(source, identifier) },
-            onData = { data ->
-                val receivedAt = SystemClock.elapsedRealtime()
-                val receivedDate = System.currentTimeMillis()
-                if (!session.checkTimeLimit(receivedAt) && session.accepts(generation)) {
-                    onData(data, receivedAt, receivedDate)
-                }
-            }
-        )
+        return dataStreamRunner.start(type, source, identifier, stream, onData)
     }
 
     @MainThread

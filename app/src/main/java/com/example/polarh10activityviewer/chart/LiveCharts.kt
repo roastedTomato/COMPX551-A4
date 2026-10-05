@@ -26,9 +26,8 @@ internal data class ChartSnapshot(
 
 // Display records only. ECG reads the existing raw buffer without another retained copy.
 internal class LiveCharts(private val ecgSamples: () -> List<EcgSample>) {
-    private data class MotionPoint(val time: Long, val cadence: Double?, val breakBefore: Boolean)
     private val hr = ArrayDeque<ChartPoint>()
-    private val motion = ArrayDeque<MotionPoint>()
+    private val motion = ArrayDeque<ChartPoint>()
     private val statuses = checkedDataTypes.associateWith { SubscriptionStatus.IDLE }.toMutableMap()
     private val frozenEnds = checkedDataTypes.associateWith { 0L }.toMutableMap()
     private var previousHrTime: Long? = null
@@ -99,7 +98,7 @@ internal class LiveCharts(private val ecgSamples: () -> List<EcgSample>) {
         continueHr = connectHr && hr.lastOrNull()?.value != null
         hrBreak = !continueHr
         val last = motion.lastOrNull()
-        continueMotion = connectMotion && !motionBreak && last?.cadence != null
+        continueMotion = connectMotion && !motionBreak && last?.value != null
         resumeMotionSegment = null
         if (!continueMotion) previousMotionSegment = null
     }
@@ -135,10 +134,9 @@ internal class LiveCharts(private val ecgSamples: () -> List<EcgSample>) {
         val previous = motion.lastOrNull()
         // Retain gaps observed between the 250 ms display samples.
         motionBreak = motionBreak || (!continueMotion && previousMotionSegment != segment) ||
-            cadence == null || previous?.cadence == null
-        if (previous != null && elapsedMs - previous.time < 250) return
-        motion.addLast(MotionPoint(elapsedMs, cadence,
-            motionBreak))
+            cadence == null || previous?.value == null
+        if (previous != null && elapsedMs - previous.elapsedMs.toLong() < 250) return
+        motion.addLast(ChartPoint(elapsedMs.toDouble(), cadence, motionBreak))
         motionBreak = false
         previousMotionSegment = segment
         continueMotion = false
@@ -165,7 +163,7 @@ internal class LiveCharts(private val ecgSamples: () -> List<EcgSample>) {
         val hrCutoff = frozenEnds.getValue(HR) - 300_000
         while (hr.isNotEmpty() && (hr.first().elapsedMs <= hrCutoff || hr.size > 301)) hr.removeFirst()
         val motionCutoff = frozenEnds.getValue(ACC) - 300_000
-        while (motion.isNotEmpty() && (motion.first().time <= motionCutoff || motion.size > 1201)) motion.removeFirst()
+        while (motion.isNotEmpty() && (motion.first().elapsedMs <= motionCutoff || motion.size > 1201)) motion.removeFirst()
     }
 
     fun snapshot(kind: ChartKind, elapsedMs: Long): ChartSnapshot {
@@ -174,9 +172,7 @@ internal class LiveCharts(private val ecgSamples: () -> List<EcgSample>) {
         fun visible(time: Double) = time >= 0 && time > end - window && time <= end
         val points = when (kind) {
             ChartKind.HEART_RATE -> hr.filter { visible(it.elapsedMs) }
-            ChartKind.CADENCE -> motion.filter { visible(it.time.toDouble()) }.map {
-                ChartPoint(it.time.toDouble(), it.cadence, it.breakBefore)
-            }
+            ChartKind.CADENCE -> motion.filter { visible(it.elapsedMs) }
             ChartKind.ELECTROCARDIOGRAM -> {
                 val anchor = ecgSensorAnchor
                 if (anchor == null) emptyList() else {
