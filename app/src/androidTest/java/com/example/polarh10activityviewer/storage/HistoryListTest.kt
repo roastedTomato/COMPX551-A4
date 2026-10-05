@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.polarh10activityviewer.history.HistoryPanel
-import com.example.polarh10activityviewer.history.SavePanel
+import com.example.polarh10activityviewer.session.SavePanel
 import com.example.polarh10activityviewer.session.SessionScaffold
 import com.example.polarh10activityviewer.ui.theme.PolarH10ActivityViewerTheme
 import kotlinx.coroutines.Dispatchers

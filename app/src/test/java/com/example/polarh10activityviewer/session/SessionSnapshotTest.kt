@@ -1,8 +1,9 @@
 package com.example.polarh10activityviewer.session
 
+import com.example.polarh10activityviewer.heartrate.HeartRateStatistics
 import com.example.polarh10activityviewer.ble.ConnectionDevice
 import com.example.polarh10activityviewer.ble.DataSubscriptions
-import com.example.polarh10activityviewer.ble.LatestHeartRate
+import com.example.polarh10activityviewer.heartrate.LatestHeartRate
 import com.example.polarh10activityviewer.ble.SubscriptionStatus
 import com.example.polarh10activityviewer.chart.ChartKind
 import com.example.polarh10activityviewer.chart.LiveCharts
@@ -180,7 +181,7 @@ class SessionSnapshotTest {
         cleanup.complete(Unit); runCurrent()
         assertEquals(SessionState(generation = oldGeneration + 1), f.session.state.value)
         assertTrue(f.subscriptions.states.value.values.all { it.status == SubscriptionStatus.IDLE })
-        assertEquals(com.example.polarh10activityviewer.ble.HeartRateStatistics(), f.hr.statistics.value)
+        assertEquals(com.example.polarh10activityviewer.heartrate.HeartRateStatistics(), f.hr.statistics.value)
         assertEquals(com.example.polarh10activityviewer.motion.StepState(), f.detector.state.value)
         assertEquals(com.example.polarh10activityviewer.heartrate.HeartRateZoneState(), f.zones.state.value)
         assertNull(f.hrHistory.sessionId); assertNull(f.motionHistory.sessionId)

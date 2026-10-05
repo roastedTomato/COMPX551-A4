@@ -5,8 +5,8 @@ import com.example.polarh10activityviewer.ble.ConnectionState
 import com.example.polarh10activityviewer.ble.ConnectionStatus
 import com.example.polarh10activityviewer.ble.DataReadiness
 import com.example.polarh10activityviewer.ble.DataReadinessStatus
-import com.example.polarh10activityviewer.ble.HeartRateReading
-import com.example.polarh10activityviewer.ble.HeartRateStatistics
+import com.example.polarh10activityviewer.heartrate.HeartRateReading
+import com.example.polarh10activityviewer.heartrate.HeartRateStatistics
 import com.example.polarh10activityviewer.ble.PolarBleManager
 import com.example.polarh10activityviewer.ble.SavedDevicesState
 import com.example.polarh10activityviewer.ble.ScanState
@@ -22,9 +22,9 @@ import com.example.polarh10activityviewer.session.SessionStatus
 import com.example.polarh10activityviewer.session.HeartRateCard
 import com.example.polarh10activityviewer.session.MotionCard
 import com.example.polarh10activityviewer.session.ActivitySummaryCard
-import com.example.polarh10activityviewer.history.RecordingPanel
+import com.example.polarh10activityviewer.session.RecordingPanel
 import com.example.polarh10activityviewer.history.HistoryPanel
-import com.example.polarh10activityviewer.history.SavePanel
+import com.example.polarh10activityviewer.session.SavePanel
 import com.example.polarh10activityviewer.storage.SaveStatus
 import androidx.compose.runtime.saveable.rememberSaveable
 

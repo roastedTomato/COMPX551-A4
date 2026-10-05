@@ -1,5 +1,7 @@
-package com.example.polarh10activityviewer.session
+package com.example.polarh10activityviewer.history
 
+import com.example.polarh10activityviewer.session.ActivityMetricsCalculator
+import com.example.polarh10activityviewer.session.SessionRecord
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable

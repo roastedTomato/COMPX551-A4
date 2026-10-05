@@ -1,7 +1,7 @@
 package com.example.polarh10activityviewer.session
 
 import com.example.polarh10activityviewer.ble.ConnectionDevice
-import com.example.polarh10activityviewer.ble.HeartRateStatistics
+import com.example.polarh10activityviewer.heartrate.HeartRateStatistics
 import com.example.polarh10activityviewer.ble.checkedDataTypes
 import com.example.polarh10activityviewer.heartrate.HeartRateZoneState
 import com.example.polarh10activityviewer.motion.StepState

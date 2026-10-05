@@ -39,7 +39,7 @@ import com.example.polarh10activityviewer.ble.ConnectionState
 import com.example.polarh10activityviewer.ble.ConnectionStatus
 import com.example.polarh10activityviewer.ble.DataReadiness
 import com.example.polarh10activityviewer.ble.DataReadinessStatus
-import com.example.polarh10activityviewer.ble.HeartRateReading
+import com.example.polarh10activityviewer.heartrate.HeartRateReading
 import com.example.polarh10activityviewer.ble.SavedDevice
 import com.example.polarh10activityviewer.ble.SavedDevicesState
 import com.example.polarh10activityviewer.ble.ScanState

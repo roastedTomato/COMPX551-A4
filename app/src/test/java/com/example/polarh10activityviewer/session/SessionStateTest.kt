@@ -4,8 +4,8 @@ import com.example.polarh10activityviewer.ble.checkedDataTypes
 import com.example.polarh10activityviewer.ble.confirmReadiness
 import com.example.polarh10activityviewer.ble.DataSubscriptions
 import com.example.polarh10activityviewer.ble.ConnectionDevice
-import com.example.polarh10activityviewer.ble.HeartRateStatistics
-import com.example.polarh10activityviewer.ble.LatestHeartRate
+import com.example.polarh10activityviewer.heartrate.HeartRateStatistics
+import com.example.polarh10activityviewer.heartrate.LatestHeartRate
 import com.example.polarh10activityviewer.ble.SubscriptionStatus
 import com.example.polarh10activityviewer.sensor.AccSampleProcessor
 import com.example.polarh10activityviewer.sensor.EcgBuffer

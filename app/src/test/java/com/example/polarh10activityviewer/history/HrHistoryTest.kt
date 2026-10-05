@@ -1,6 +1,6 @@
 package com.example.polarh10activityviewer.history
 
-import com.example.polarh10activityviewer.ble.HeartRateReading
+import com.example.polarh10activityviewer.heartrate.HeartRateReading
 import com.example.polarh10activityviewer.ble.SubscriptionStatus
 import org.junit.Assert.*
 import org.junit.Test

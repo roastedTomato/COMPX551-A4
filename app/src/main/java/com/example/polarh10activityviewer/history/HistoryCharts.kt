@@ -40,7 +40,6 @@ import com.example.polarh10activityviewer.chart.ChartSnapshot
 import com.example.polarh10activityviewer.chart.LivePlot
 import com.example.polarh10activityviewer.chart.chartScale
 import com.example.polarh10activityviewer.session.SessionSnapshot
-import com.example.polarh10activityviewer.session.SummaryCard
 import com.example.polarh10activityviewer.session.sessionBlue
 import com.example.polarh10activityviewer.storage.SessionDatabase
 import kotlin.math.abs

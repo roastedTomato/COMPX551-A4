@@ -1,5 +1,8 @@
-package com.example.polarh10activityviewer.session
+package com.example.polarh10activityviewer.history
 
+import com.example.polarh10activityviewer.session.sessionBlue
+import com.example.polarh10activityviewer.session.sessionBorder
+import com.example.polarh10activityviewer.session.SessionRecord
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape

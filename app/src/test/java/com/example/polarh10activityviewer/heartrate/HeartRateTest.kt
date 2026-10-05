@@ -1,9 +1,6 @@
 package com.example.polarh10activityviewer.heartrate
 
 import com.example.polarh10activityviewer.ble.DataSubscriptions
-import com.example.polarh10activityviewer.ble.HeartRateReading
-import com.example.polarh10activityviewer.ble.HeartRateStatistics
-import com.example.polarh10activityviewer.ble.LatestHeartRate
 import com.example.polarh10activityviewer.ble.SubscriptionStatus
 
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType.HR

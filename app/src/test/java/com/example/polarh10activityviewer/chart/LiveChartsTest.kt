@@ -1,9 +1,9 @@
 package com.example.polarh10activityviewer.chart
 
 import com.example.polarh10activityviewer.ble.checkedDataTypes
-import com.example.polarh10activityviewer.ble.HeartRateReading
-import com.example.polarh10activityviewer.ble.HeartRateStatistics
-import com.example.polarh10activityviewer.ble.LatestHeartRate
+import com.example.polarh10activityviewer.heartrate.HeartRateReading
+import com.example.polarh10activityviewer.heartrate.HeartRateStatistics
+import com.example.polarh10activityviewer.heartrate.LatestHeartRate
 import com.example.polarh10activityviewer.ble.SubscriptionStatus
 import com.example.polarh10activityviewer.heartrate.HeartRateZones
 import com.example.polarh10activityviewer.motion.StepDetector

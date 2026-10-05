@@ -1,4 +1,4 @@
-package com.example.polarh10activityviewer.history
+package com.example.polarh10activityviewer.session
 
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.AlertDialog

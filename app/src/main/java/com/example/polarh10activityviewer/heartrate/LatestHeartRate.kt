@@ -1,5 +1,6 @@
-package com.example.polarh10activityviewer.ble
+package com.example.polarh10activityviewer.heartrate
 
+import com.example.polarh10activityviewer.ble.SubscriptionStatus
 import androidx.annotation.MainThread
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType
 import com.polar.sdk.api.model.PolarHrData

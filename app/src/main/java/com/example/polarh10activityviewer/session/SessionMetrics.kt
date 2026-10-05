@@ -30,8 +30,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.text.style.TextAlign
-import com.example.polarh10activityviewer.ble.HeartRateReading
-import com.example.polarh10activityviewer.ble.HeartRateStatistics
+import com.example.polarh10activityviewer.heartrate.HeartRateReading
+import com.example.polarh10activityviewer.heartrate.HeartRateStatistics
 import com.example.polarh10activityviewer.ble.SubscriptionState
 import com.example.polarh10activityviewer.ble.SubscriptionStatus
 import com.example.polarh10activityviewer.heartrate.formatZoneDuration

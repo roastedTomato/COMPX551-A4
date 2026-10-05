@@ -23,9 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.polarh10activityviewer.heartrate.HeartRateZoneRows
 import com.example.polarh10activityviewer.session.SessionRecord
-import com.example.polarh10activityviewer.session.SummaryCard
 import com.example.polarh10activityviewer.session.SessionSnapshot
-import com.example.polarh10activityviewer.session.SessionSummaryPanel
 import com.example.polarh10activityviewer.session.sessionBackground
 import com.example.polarh10activityviewer.session.sessionBlue
 import java.time.Instant

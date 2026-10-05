@@ -1,5 +1,6 @@
 package com.example.polarh10activityviewer.ble
 
+import com.example.polarh10activityviewer.heartrate.LatestHeartRate
 import com.example.polarh10activityviewer.chart.ChartKind
 import com.example.polarh10activityviewer.chart.LiveCharts
 import com.example.polarh10activityviewer.heartrate.HeartRateZones

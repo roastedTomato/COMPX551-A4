@@ -22,7 +22,6 @@ import com.example.polarh10activityviewer.BluetoothAvailability
 import com.example.polarh10activityviewer.SessionScreen
 import com.example.polarh10activityviewer.ble.*
 import com.example.polarh10activityviewer.history.HistoryPanel
-import com.example.polarh10activityviewer.history.SavePanel
 import com.example.polarh10activityviewer.storage.*
 import com.example.polarh10activityviewer.ui.theme.PolarH10ActivityViewerTheme
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType

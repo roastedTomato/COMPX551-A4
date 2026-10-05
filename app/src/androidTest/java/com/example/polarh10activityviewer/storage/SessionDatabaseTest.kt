@@ -4,7 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.polarh10activityviewer.ble.ConnectionDevice
 import com.example.polarh10activityviewer.ble.checkedDataTypes
-import com.example.polarh10activityviewer.ble.HeartRateReading
+import com.example.polarh10activityviewer.heartrate.HeartRateReading
 import com.example.polarh10activityviewer.ble.SubscriptionStatus
 import com.example.polarh10activityviewer.chart.ChartPoint
 import com.example.polarh10activityviewer.chart.chartSegments

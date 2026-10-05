@@ -1,6 +1,5 @@
 package com.example.polarh10activityviewer.heartrate
 
-import com.example.polarh10activityviewer.ble.HeartRateReading
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

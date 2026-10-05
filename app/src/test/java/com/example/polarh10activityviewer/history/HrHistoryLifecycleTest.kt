@@ -1,7 +1,7 @@
 package com.example.polarh10activityviewer.history
 
 import com.example.polarh10activityviewer.ble.DataSubscriptions
-import com.example.polarh10activityviewer.ble.LatestHeartRate
+import com.example.polarh10activityviewer.heartrate.LatestHeartRate
 import com.example.polarh10activityviewer.ble.SubscriptionStatus
 import com.example.polarh10activityviewer.chart.ChartKind
 import com.example.polarh10activityviewer.chart.LiveCharts

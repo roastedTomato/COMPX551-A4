@@ -1,5 +1,7 @@
 package com.example.polarh10activityviewer.session
 
+import com.example.polarh10activityviewer.heartrate.HeartRateStatistics
+import com.example.polarh10activityviewer.heartrate.HeartRateReading
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
